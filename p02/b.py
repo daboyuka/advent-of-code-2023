@@ -5,27 +5,29 @@ from collections import *
 from functools import *
 import re
 
-inp = lines()
+stepT = pchain(pdelim(" "), ptuple(int, str))  # 3 red
+stepsT = pchain(pdelim(", "), ptuple(stepT)) # step, step, ...
+gamesT = pchain(pdelim("; "), ptuple(stepsT)) # steps; steps; ...
 
-power = 0
+inp = lines(pchain(
+    pre(r'Game (\d+): (.*)'),
+    ptuple(
+        int,
+        gamesT
+    ),
+))
 
-for l in inp:
-    game, steps = l.split(": ", 2)
-    id = int(game[5:])
+cid = {"red": 0, "green": 1, "blue": 2}
 
-    mcubes = [0,0,0]
-    for step in steps.split("; "):
-        items = step.split(", ")
-        v = [0,0,0]
-        for item in items:
-            n, color = ptuple(int, str)(item.split(" "))
-            if color == "red" and n > mcubes[0]:
-                mcubes[0] = n
-            elif color == "green" and n > mcubes[1]:
-                mcubes[1] = n
-            elif color == "blue" and n > mcubes[2]:
-                mcubes[2] = n
+s = 0
+for id, games in inp:
+    s += prod(
+        max(
+            max(
+                (n for n, color in steps if cid[color] == whichcolor),
+                default=0
+            ) for steps in games
+        ) for whichcolor in [0, 1, 2]
+    )
 
-    power += mcubes[0] * mcubes[1] * mcubes[2]
-
-print(power)
+print(s)

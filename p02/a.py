@@ -5,38 +5,28 @@ from collections import *
 from functools import *
 import re
 
-inp = lines()
+stepT = pchain(pdelim(" "), ptuple(int, str))  # 3 red
+stepsT = pchain(pdelim(", "), ptuple(stepT)) # step, step, ...
+gamesT = pchain(pdelim("; "), ptuple(stepsT)) # steps; steps; ...
+
+inp = lines(pchain(
+    pre(r'Game (\d+): (.*)'),
+    ptuple(
+        int,
+        gamesT
+    ),
+))
+
+print(inp)
+
+cid = {"red": 0, "green": 1, "blue": 2}
 
 thresh = (12, 13, 14)
-ok = 0
 
-for l in inp:
-    game, steps = l.split(": ", 2)
-    id = int(game[5:])
-
+s = 0
+for id, games in inp:
     poss = True
-    for step in steps.split("; "):
-        items = step.split(", ")
-        v = [0,0,0]
-        for item in items:
-            n, color = ptuple(int, str)(item.split(" "))
-            if color == "red":
-                v[0] += n
-            elif color == "green":
-                v[1] += n
-            elif color == "blue":
-                v[2] += n
+    if not any(any(n > thresh[cid[color]] for n, color in steps) for steps in games):
+        s += id
 
-        for i, x in enumerate(v):
-            if x > thresh[i]:
-                poss = False
-                break
-
-        if not poss:
-            break
-
-    if poss:
-        print(id)
-        ok += id
-
-print(ok)
+print(s)
