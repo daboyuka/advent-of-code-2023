@@ -14,17 +14,19 @@ BLK = "\u2588"  # full ASCII block
 # Parsing
 #
 
-# parser is an item mapper applied to each line
-def lines(parser=lambda l: l):
+# Split input on newlines into list of strings.
+# parsers are item mappers applied to each line (in sequence).
+def lines(*parsers):
     ls = sys.stdin.readlines()
     ls = map(lambda x: x.rstrip("\n"), ls)
-    ls = map(parser, ls)
+    for p in parsers:
+        ls = map(p, ls)
     return list(ls)
 
-# parser is an item mapper applied to each line
+# parsers are item mappers applied to each line (in sequence).
 # lgparser is an item mapper applied to each linegroup (after parser
 # has been applied to constituent lines)
-def linegroups(parserlg=lambda lg: lg, parser=lambda l: l):
+def linegroups(parserlg=lambda lg: lg, *parsers):
     def r(parts, x):
         if x == "":
             parts.append([])
@@ -32,12 +34,17 @@ def linegroups(parserlg=lambda lg: lg, parser=lambda l: l):
             parts[-1].append(x)
         return parts
 
-    lgs = functools.reduce(r, lines(parser), [[]])
+    lgs = functools.reduce(r, lines(*parsers), [[]])
     return list(map(parserlg, lgs))
 
-# pchain returns an item mapper that applies each mappers[i] in sequence
+# pchain returns an item mapper that applies mappers in sequence
 # to each item.
 def pchain(*mappers):
+    if len(mappers) == 0:
+        return lambda l: l
+    elif len(mappers) == 1:
+        return mappers[0]
+
     def _parse(l):
         for m in mappers:
             l = m(l)
@@ -45,13 +52,15 @@ def pchain(*mappers):
     return _parse
 
 # pdelim returns an item mapper that splits a line on a delim.
-def pdelim(d=" "):
-    return lambda l: l.split(d)
+# If mappers are given, they are composed and applied to map each split value.
+def pdelim(d=" ", *mappers):
+    return lambda l: list(map(pchain(*mappers), l.split(d)))
 
-# pints returns an item mapper that splits a line into a list of ints
-# (or other type if typ is given).
-def pints(d=" ", typ=int):
-    return lambda l: tmap(typ, l.split(d))
+# predelim returns an item mapper that splits a line on a regex delim.
+# If mappers are given, they are composed and applied to map each split value.
+def predelim(d=" +", *mappers):
+    r = re.compile(d)
+    return lambda l: list(map(pchain(*mappers), r.split(l)))
 
 # ptuple returns an item mapper for tuples that maps the i'th component
 # of each tuple using emappers[i].
@@ -86,15 +95,15 @@ def prelg(r):
 
 def idict(): return collections.defaultdict(lambda: 0)
 def sdict(): return collections.defaultdict(lambda: "")
+def bdict(): return collections.defaultdict(lambda: False)
+def ldict(): return collections.defaultdict(lambda: [])
 
-def typmap(f, iterable):
+def tmap(f, iterable):
     t = type(iterable)
     return t(map(f, iterable))
 
 def prod(l):
     return functools.reduce(operator.mul, l, 1)
-
-tmap = typmap  # alias
 
 # edgedist: lambda x, y: weight of edge (x, y) (only called on neighboring nodes)
 #           (weight must be additive and comparable)
@@ -289,7 +298,7 @@ def newgridpts(pts, ptval, fillval):
     return g
 
 def parsegrid(lines):
-    return grid(typmap(list, lines))
+    return grid(tmap(list, lines))
 
 class infgrid(dict):
     def __init__(self, pts=[], ptval='#', fillval='.', loose=False):

@@ -5,22 +5,16 @@ from collections import *
 from functools import *
 import re
 
-inp = lines(pchain(
-    pre(r"Card\s+(\d+): (.*) \| (.*)"),
+inp = lines(
+    pre(r"Card\s+(\d+):\s+(.*)\s+\|\s+(.*)\s*"),
     ptuple(
         int,
-        pchain(
-            pdelim(),
-            lambda l : filter(lambda x: x != "", l),
-            ptuple(int),
-        ),
-        pchain(
-            pdelim(),
-            lambda l : filter(lambda x: x != "", l),
-            ptuple(int),
-        ),
+        predelim(" +", int),
+        predelim(" +", int),
     )
-))
+)
+
+print(inp)
 
 total = 0
 nextDups = deque()
