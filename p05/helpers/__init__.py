@@ -38,6 +38,12 @@ def linegroups(parserlg=lambda lg: lg, *parsers):
     return list(map(parserlg, lgs))
 
 
+def pdebug(prefix="DEBUG"):
+    def _parse(l):
+        print(prefix, l)
+        return l
+    return _parse
+
 # pchain returns an item mapper that applies mappers in sequence
 # to each item.
 def pchain(*mappers):
@@ -63,6 +69,11 @@ def predelim(d=" +", *mappers):
     r = re.compile(d)
     return lambda l: list(map(pchain(*mappers), r.split(l)))
 
+# pmap returns an item mapper for tuples/lists that applies mappers
+# to the elements of the input list.
+def pmap(*mappers):
+    return lambda l: tmap(pchain(*mappers), l)
+
 # ptuple returns an item mapper for tuples that maps the i'th component
 # of each tuple using emappers[i].
 #
@@ -79,6 +90,11 @@ def ptuple(*emappers):
 def pre(r):
     r = re.compile(r)
     return lambda l: r.match(l).groups()
+
+# pre1 is as pre, but returns a single capture group as a string (not tuple).
+def pre1(r):
+    r = re.compile(r)
+    return lambda l: r.match(l).group(1)
 
 # prelg returns an item mapper that parses a linegroup using regexp r,
 # returning all capture groups as a tuple

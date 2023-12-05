@@ -7,23 +7,22 @@ import re
 
 inp = linegroups()
 
-print(inp[0])
-seeds = list(map(int, inp[0][0].split(" ")[1:]))
+seeds = pchain(pre1("seeds: (.*)"), pdelim(" ", int))(inp[0][0])
 
-layers = []
+layers = tmap(
+    pchain(
+        lambda lg: lg[1:],
+        pmap(
+            pdelim(" ", int),
+            lambda e: (intv(e[1], e[1]+e[2]), e[0] - e[1]),
+        ),
+    ),
+    inp[1:])
 
-for m in inp[1:]:
-    layer = []
-    for m2 in m[1:]:
-        a, b, l = map(int, m2.split(" "))
-        layer.append((intv(b, b+l), a - b))
-    layers.append(layer)
-
-mapped = []
-for i in range(0, len(seeds), 2):
-    mapped.append(intv(seeds[i], seeds[i] + seeds[i+1]))
-
-print(mapped)
+mapped = list(map(
+    lambda e: intv(e[0], e[0] + e[1]),
+    part(seeds, 2),
+))
 
 for layer in layers:
     toMaps = mapped
@@ -45,6 +44,5 @@ for layer in layers:
                 toMapsNew.append(toMap)
         toMaps = toMapsNew
     mapped.extend(toMaps)
-    print(mapped)
 
 print(min(map(lambda i: i[0], mapped)))

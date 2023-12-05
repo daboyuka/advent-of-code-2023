@@ -37,6 +37,13 @@ def linegroups(parserlg=lambda lg: lg, *parsers):
     lgs = functools.reduce(r, lines(*parsers), [[]])
     return list(map(parserlg, lgs))
 
+
+def pdebug(prefix="DEBUG"):
+    def _parse(l):
+        print(prefix, l)
+        return l
+    return _parse
+
 # pchain returns an item mapper that applies mappers in sequence
 # to each item.
 def pchain(*mappers):
@@ -62,6 +69,11 @@ def predelim(d=" +", *mappers):
     r = re.compile(d)
     return lambda l: list(map(pchain(*mappers), r.split(l)))
 
+# pmap returns an item mapper for tuples/lists that applies mappers
+# to the elements of the input list.
+def pmap(*mappers):
+    return lambda l: tmap(pchain(*mappers), l)
+
 # ptuple returns an item mapper for tuples that maps the i'th component
 # of each tuple using emappers[i].
 #
@@ -78,6 +90,11 @@ def ptuple(*emappers):
 def pre(r):
     r = re.compile(r)
     return lambda l: r.match(l).groups()
+
+# pre1 is as pre, but returns a single capture group as a string (not tuple).
+def pre1(r):
+    r = re.compile(r)
+    return lambda l: r.match(l).group(1)
 
 # prelg returns an item mapper that parses a linegroup using regexp r,
 # returning all capture groups as a tuple
@@ -104,6 +121,11 @@ def tmap(f, iterable):
 
 def prod(l):
     return functools.reduce(operator.mul, l, 1)
+
+# part partitions seq into tuples of length n.
+# If seq's length is not a multiple of n, pad with fillvalue.
+def part(seq, n, fillvalue=None):
+    return itertools.zip_longest(*[iter(seq)] * n, fillvalue=fillvalue)
 
 # edgedist: lambda x, y: weight of edge (x, y) (only called on neighboring nodes)
 #           (weight must be additive and comparable)
@@ -155,7 +177,7 @@ def iterbb(a, b):
     return itertools.product(*ranges)
 
 # Iterate over horizontal/vertical line
-def iterline(a, b):
+def iterline(a, b, incl=True):
     idxs = [i for i in range(len(a)) if a[i] != b[i]]
     if len(idxs) == 0:
         yield a
@@ -164,8 +186,17 @@ def iterline(a, b):
 
     i = idxs[0]
     ai, bi = (a[i], b[i]) if a[i] < b[i] else (b[i], a[i])
-    for x in range(ai, bi+1):
+    for x in range(ai, bi + (1 if incl else 0)):
         yield a.replace(i, x)
+
+# iterborder iterates over the (inclusive) boundary of bounding box from pt a to b
+# (Ex: includes a; excludes b)
+# BROKEN
+def iterborder(a, b):
+    yield from iterline(a, b.replace(0, a[0]), False)
+    yield from iterline(b.replace(0, a[0]), b, False)
+    yield from iterline(b, a.replace(1, b[0]), False)
+    yield from iterline(a.replace(1, b[0]), a, False)
 
 # Manhattan distance
 def mdist(a, b):
@@ -394,8 +425,16 @@ class intv(tuple):
         else:
             return self, other
 
+    def intersect(self, other):
+        if not self.intersects(other):
+            return intv(0, 0)
+        return intv(max(self[0], other[0]), min(self[1], other[1]))
+
     def sub(self, other):
         return intv(self[0], min(self[1], other[0])), intv(max(self[0], other[1]), self[1])
+
+    def shift(self, amt):
+        return intv(self[0]+amt, self[1]+amt)
 
 # iterintvs generates intervals as the (union of intervals pos) minus (union of intervals neg)
 def iterintvs(pos, neg):
