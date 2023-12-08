@@ -6,14 +6,10 @@ from functools import *
 from tqdm import *
 import re
 
-lg = linegroups()
-
-dirs = lg[0][0]
-
-moves = list(map(
-    pchain(
-    pre(r'(\w+) = \((\w+), (\w+)\)')),
-    lg[1]))
+(dirs,), moves = linegroups(
+    str,  # single sequence line
+    pre(r'(\w+) = \((\w+), (\w+)\)'),  # move line
+)
 
 print(dirs)
 print(moves)

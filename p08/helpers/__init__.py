@@ -23,19 +23,22 @@ def lines(*parsers):
         ls = map(p, ls)
     return list(ls)
 
-# parsers are item mappers applied to each line (in sequence).
-# lgparser is an item mapper applied to each linegroup (after parser
-# has been applied to constituent lines)
-def linegroups(parserlg=lambda lg: lg, *parsers):
+# parsers are item mappers where the i'th parser applies to the lines
+# of the i'th linegroup. If there are more linegroups than parsers, the
+# last parser is used for all remaining linegroups.
+def linegroups(*parsers):
     def r(parts, x):
         if x == "":
             parts.append([])
         else:
+            if len(parsers) > 0:
+                lgi = len(parts)-1
+                parser = parsers[lgi if lgi < len(parsers) else -1]
+                x = parser(x)
             parts[-1].append(x)
         return parts
 
-    lgs = functools.reduce(r, lines(*parsers), [[]])
-    return list(map(parserlg, lgs))
+    return list(functools.reduce(r, lines(), [[]]))
 
 
 def pdebug(prefix="DEBUG"):
