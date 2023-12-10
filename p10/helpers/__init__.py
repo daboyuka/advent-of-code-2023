@@ -311,6 +311,19 @@ class grid(list):
 
         return shortpath(a, b, _nbrs, lambda x, y: 1, maxd)
 
+    # visit: pt, tileval, vals[pt], vals -> yield (pt2, v2), ...
+    # where vals is the current table of pt -> v
+    def flood(self, pt, v, visit):
+        vals = {pt: v}
+        next = collections.deque([pt])
+        while len(next) > 0:
+            nextpt = next.popleft()
+            for pt2, v2 in visit(nextpt, self.at(nextpt), vals[nextpt], vals):
+                if pt2 not in vals:
+                    vals[pt2] = v2
+                    next.append(pt2)
+        return vals
+
     def copy(self):
         g2 = grid([])
         g2.base = self.base

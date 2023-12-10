@@ -34,45 +34,17 @@ print(poss)
 
 inp.set(s, poss.pop())
 
-seen = set()
-visit = deque([s])
-while len(visit) > 0:
-    n = visit.popleft()
-    t = inp.at(n)
-    for d in ends[t]:
-        n2 = n + d.gvec()
-        if n2 not in seen:
-            seen.add(n2)
-            visit.append(n2)
-
-for pt, t in inp.itertiles():
-    if pt not in seen:
-        inp.set(pt, '.')
-
-print(inp.render())
-print()
+seen = inp.flood(s, True, lambda pt, t, v, vals: [(pt + d.gvec(), True) for d in ends[t]])
 
 cont = 0
-rs, cs = inp.size()
-for r in range(rs):
-    ins = False
-    cross = None
-    for c in range(cs):
-        pt = P(r, c)
-        t = inp.at(pt, '.')
-
-        if pt in seen:
-            for d in ends[t]:
-                if d == north or d == south:
-                    if cross is None:
-                        cross = d
-                    else:
-                        if cross != d:
-                            ins = not ins
-                        cross = None
-        elif ins:
-            cont += 1
-            inp.set(pt, 'I')
+crossed = bdict()
+for pt, t in inp.itertiles():
+    if pt in seen.keys():
+        for d in ends[t]:
+            crossed[d] = not crossed[d]
+    elif crossed[north] and crossed[south]:
+        cont += 1
+        inp.set(pt, 'I')
 
 print(inp.render())
 print(cont)
