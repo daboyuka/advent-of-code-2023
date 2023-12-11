@@ -297,12 +297,20 @@ class grid(list):
         for r, row in enumerate(self):
             for c, t in enumerate(row):
                 yield self.base + P(r, c), t
+    def iterrows(self):
+        for r, row in enumerate(self):
+            yield self.base[0] + r, row
+    def itercols(self):
+        for c in range(0, len(self[0])):
+            yield c + self.base[1], [self[r][c] for r in range(len(self))]
+
     def count(self, v):
+        return sum(self.find(v))
+    def find(self, v):
         if not callable(v):
             find = v
-            v = lambda x: x == find
-
-        return sum(1 for _, x in self.itertiles() if v(x))
+            v = lambda t: t == find
+        return (pt for pt, t in self.itertiles() if v(t))
 
     # passable: tileval -> True/False (can walk on)
     def shortpath(self, a, b, passable, maxd=None, nbrs=P.nbr4):

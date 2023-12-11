@@ -11,13 +11,11 @@ inp = parsegrid(lines())
 rs, cs = inp.size()
 
 bigrows, bigcols = set(), set()
-
-for r in range(rs):
-    if not any(inp.at(P(r, c)) == '#' for c in range(cs)):
+for r, row in inp.iterrows():
+    if not any(t == '#' for t in row):
         bigrows.add(r)
-
-for c in range(cs):
-    if not any(inp.at(P(r, c)) == '#' for r in range(rs)):
+for c, col in inp.itercols():
+    if not any(t == '#' for t in col):
         bigcols.add(c)
 
 # cd[i] = dist from 0 to i exclusive
@@ -30,27 +28,12 @@ for c in range(1, cs+1):
 print(cd)
 print(rd)
 
-gs = set()
-for pt, t in inp.itertiles():
-    if t == "#":
-        gs.add(pt)
-
+gs = set(inp.find("#"))
 print(gs)
 
 td = 0
-for a in sorted(gs):
-    for b in sorted(gs):
-        if a == b:
-            continue
-        d = abs(a[0]-b[0]) + abs(a[1]-b[1])
+for a, b in itertools.combinations(gs, 2):
+    d = abs(rd[a[0]]-rd[b[0]]) + abs(cd[a[1]]-cd[b[1]])
+    td += d
 
-        lb, ub = bounds([a, b])
-        for r in range(lb[0], ub[0]):
-            if r in bigrows:
-                d += 1
-        for c in range(lb[1], ub[1]):
-            if c in bigcols:
-                d += 1
-        td += d
-
-print(td/2)
+print(td)
